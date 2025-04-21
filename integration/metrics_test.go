@@ -416,7 +416,7 @@ func buildIndexByManipulatingZtocData(sh *shell.Shell, indexDigest string, manip
 		Size:   index.Subject.Size,
 	}
 
-	newIndex := soci.NewIndex(newZtocDescs, &subject, nil)
+	newIndex := soci.NewIndex(soci.V1, newZtocDescs, &subject, nil)
 	b, err := soci.MarshalIndex(newIndex)
 	if err != nil {
 		return "", err
