@@ -500,7 +500,7 @@ func TestPullWithAribtraryBlobInvalidZtocFormat(t *testing.T) {
 					soci.IndexAnnotationImageLayerMediaType: layer.MediaType,
 				},
 			}
-			if err := testutil.InjectContentStoreContentFromBytes(sh, config.DefaultContentStoreType, desc, ztocBytes); err != nil {
+			if err := testutil.InjectContentStoreContentFromBytes(sh, config.DefaultContentStoreType, imgDigest, desc, ztocBytes); err != nil {
 				t.Fatalf("cannot write ztoc %s to content store: %v", ztocDgst.String(), err)
 			}
 			ztocDescs = append(ztocDescs, desc)
@@ -531,7 +531,8 @@ func TestPullWithAribtraryBlobInvalidZtocFormat(t *testing.T) {
 			want := fromNormalSnapshotter(sociImage.ref)
 			test := func(t *testing.T, tarExportArgs ...string) {
 				image := sociImage.ref
-				indexBytes, imgLayers, err := buildMaliciousIndex(sh, image[strings.IndexByte(image, '@')+1:])
+				imgDigest := image[strings.IndexByte(image, '@')+1:]
+				indexBytes, imgLayers, err := buildMaliciousIndex(sh, imgDigest)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -541,7 +542,7 @@ func TestPullWithAribtraryBlobInvalidZtocFormat(t *testing.T) {
 					Digest: indexDigest,
 					Size:   int64(len(indexBytes)),
 				}
-				if err := testutil.InjectContentStoreContentFromBytes(sh, config.DefaultContentStoreType, desc, indexBytes); err != nil {
+				if err := testutil.InjectContentStoreContentFromBytes(sh, config.DefaultContentStoreType, imgDigest, desc, indexBytes); err != nil {
 					t.Fatalf("cannot write index %s to content store: %v", indexDigest.String(), err)
 				}
 				export(sh, image, indexDigest.String(), tarExportArgs)
