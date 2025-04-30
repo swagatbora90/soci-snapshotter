@@ -229,6 +229,10 @@ func (b *IndexBuilder) annotateImages(ctx context.Context, ociIndex *ocispec.Ind
 		// Since we use ArtifactTypes for SOCI indexes, we will use OCI image manifests everywhere to increase compatibility.
 		// Registries don't seem to be as picky about layer and config types
 		manifest.MediaType = ocispec.MediaTypeImageManifest
+		manifest.Config, err = b.convertConfig(ctx, manifest.Config)
+		if err != nil {
+			return err
+		}
 
 		idx := slices.IndexFunc(sociIndexes, func(i *IndexWithMetadata) bool { return i.ManifestDesc.Digest == manifestDesc.Digest })
 		if idx >= 0 {
@@ -260,6 +264,20 @@ func (b *IndexBuilder) annotateImages(ctx context.Context, ociIndex *ocispec.Ind
 		}
 	}
 	return nil
+}
+
+func (b *IndexBuilder) convertConfig(ctx context.Context, desc ocispec.Descriptor) (ocispec.Descriptor, error) {
+	configReader, err := b.contentStore.ReaderAt(ctx, desc)
+	if err != nil {
+		return ocispec.Descriptor{}, err
+	}
+	var anyJson map[string]any
+	err = json.NewDecoder(io.NewSectionReader(configReader, 0, desc.Size)).Decode(&anyJson)
+	if err != nil {
+		return ocispec.Descriptor{}, err
+	}
+	anyJson["mediaType"] = ocispec.MediaTypeImageConfig
+	return b.pushOCIObject(ctx, anyJson)
 }
 
 // addSociIndexes modifies the list of manifests in the OCI index to include the SOCI indexes.
